@@ -29,7 +29,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen p-8">
       <h1 className="text-4xl font-bold mb-8">
-        Mi Headless WordPress 🚀
+        Sitio en construccion 🚀
       </h1>
       
       {error ? (
