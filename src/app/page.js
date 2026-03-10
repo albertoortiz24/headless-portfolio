@@ -1,7 +1,7 @@
 // app/page.js - Versión CORREGIDA y SIMPLIFICADA
 export default async function Home() {
   // 1. Definir la URL de tu API (¡AHORA CON TU DOMINIO CORRECTO!)
-  const apiUrl = 'https://mopdev.com/wp-json/wp/v2/posts';
+  const apiUrl = 'https://greenyellow-vulture-916371.hostingersite.com/wp-json/wp/v2/posts';
   
   // 2. Variable para almacenar los posts
   let posts = [];
