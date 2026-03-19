@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
@@ -9,51 +9,131 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 import { getProyectosDestacados, getCategoriasProyectos } from '@/lib/wordpress';
 
-// Registrar plugins de GSAP
 gsap.registerPlugin(ScrollTrigger);
 
 const GridProyectos = () => {
   const [proyectos, setProyectos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaActiva, setCategoriaActiva] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [cargandoCategoria, setCargandoCategoria] = useState(false);
   const [totalProyectos, setTotalProyectos] = useState(0);
+  const [mostrarTodos, setMostrarTodos] = useState(false);
   
   const gridRef = useRef(null);
   const cardsRef = useRef([]);
   const tituloRef = useRef(null);
   const filtrosRef = useRef(null);
   const botonesRef = useRef(null);
+  const gridContainerRef = useRef(null);
+  const animationRef = useRef(null); // ← Para controlar animaciones
 
   // Cargar proyectos y categorías
   useEffect(() => {
+    let isActive = true; // ← Para evitar actualizaciones si el componente se desmonta
+    
     const fetchData = async () => {
-      setLoading(true);
+      setCargandoCategoria(true);
+      
+      // 1. ANIMAR SALIDA: Desvanecer cards actuales INMEDIATAMENTE
+      const cardsSalientes = cardsRef.current.filter(card => card);
+      if (cardsSalientes.length > 0) {
+        await gsap.to(cardsSalientes, {
+          opacity: 0,
+          y: 20,
+          scale: 0.95,
+          duration: 0.2,
+          stagger: 0.02,
+          ease: 'power2.in',
+          overwrite: true
+        });
+      }
+
+      // 2. LIMPIAR REFS
+      cardsRef.current = [];
+
       try {
         const [proyectosData, categoriasData] = await Promise.all([
           getProyectosDestacados(categoriaActiva),
           getCategoriasProyectos()
         ]);
         
-        setProyectos(proyectosData.proyectos || []);
-        setTotalProyectos(proyectosData.total || 0);
-        setCategorias(categoriasData || []);
+        if (isActive) {
+          setProyectos(proyectosData.proyectos || []);
+          setTotalProyectos(proyectosData.total || 0);
+          setCategorias(categoriasData || []);
+          setMostrarTodos(false);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
+        if (isActive) {
+          setCargandoCategoria(false);
+        }
       }
     };
 
-    fetchData();
+    if (categoriaActiva !== undefined) {
+      fetchData();
+    }
+
+    return () => {
+      isActive = false;
+      // Matar cualquier animación en curso
+      if (animationRef.current) {
+        animationRef.current.kill();
+      }
+    };
   }, [categoriaActiva]);
 
-  // Animaciones GSAP
+  // ANIMACIÓN DE ENTRADA DE NUEVAS CARDS
   useEffect(() => {
-    if (loading || proyectos.length === 0) return;
+    if (proyectos.length === 0) {
+      setCargandoCategoria(false);
+      return;
+    }
+
+    // Pequeño delay para asegurar que el DOM se actualizó
+    const timer = setTimeout(() => {
+      const nuevasCards = cardsRef.current.filter(card => card);
+      
+      if (nuevasCards.length > 0) {
+        // Configurar estado inicial
+        gsap.set(nuevasCards, {
+          opacity: 0,
+          y: 40,
+          scale: 0.95
+        });
+
+        // Animar entrada
+        animationRef.current = gsap.to(nuevasCards, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.05,
+          ease: 'back.out(1.2)',
+          onComplete: () => {
+            setCargandoCategoria(false);
+            animationRef.current = null;
+          }
+        });
+      } else {
+        setCargandoCategoria(false);
+      }
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      if (animationRef.current) {
+        animationRef.current.kill();
+      }
+    };
+  }, [proyectos]);
+
+  // ANIMACIÓN DE ENTRADA INICIAL (solo una vez)
+  useEffect(() => {
+    if (proyectos.length === 0) return;
 
     const ctx = gsap.context(() => {
-      // Timeline principal
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: gridRef.current,
@@ -63,113 +143,71 @@ const GridProyectos = () => {
         }
       });
 
-      // Animación del título
       tl.fromTo(tituloRef.current,
         { opacity: 0, y: 50 },
         { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
-      );
-
-      // Animación de los filtros
-      tl.fromTo(filtrosRef.current,
+      )
+      .fromTo(filtrosRef.current,
         { opacity: 0, y: 30 },
         { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
         '-=0.4'
-      );
-
-      // Animación de las cards (efecto escalera)
-      tl.fromTo(cardsRef.current,
-        { 
-          opacity: 0,
-          y: 60,
-          scale: 0.9
-        },
-        { 
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: 'back.out(1.2)'
-        },
-        '-=0.2'
-      );
-
-      // Animación de los botones inferiores
-      tl.fromTo(botonesRef.current,
+      )
+      .fromTo(gridContainerRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.5 },
+        '-=0.4'
+      )
+      .fromTo(botonesRef.current,
         { opacity: 0, y: 30 },
         { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
         '+=0.2'
       );
-
-      // Animaciones hover para las cards
-      cardsRef.current.forEach((card) => {
-        if (!card) return;
-        
-        card.addEventListener('mouseenter', () => {
-          gsap.to(card, {
-            scale: 1.05,
-            y: -10,
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-            duration: 0.3,
-            ease: 'power2.out'
-          });
-          
-          // Animar la imagen dentro de la card
-          const img = card.querySelector('.project-image');
-          if (img) {
-            gsap.to(img, {
-              scale: 1.1,
-              duration: 0.5,
-              ease: 'power2.out'
-            });
-          }
-        });
-
-        card.addEventListener('mouseleave', () => {
-          gsap.to(card, {
-            scale: 1,
-            y: 0,
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-            duration: 0.3,
-            ease: 'power2.out'
-          });
-          
-          const img = card.querySelector('.project-image');
-          if (img) {
-            gsap.to(img, {
-              scale: 1,
-              duration: 0.5,
-              ease: 'power2.out'
-            });
-          }
-        });
-      });
     }, gridRef);
 
     return () => ctx.revert();
-  }, [loading, proyectos]);
+  }, []);
 
-  const cambiarCategoria = (slug) => {
-    setCategoriaActiva(slug === categoriaActiva ? '' : slug);
+  const cambiarCategoria = useCallback((slug) => {
+    if (cargandoCategoria) return;
+    
+    const nuevaCategoria = slug === categoriaActiva ? '' : slug;
+    setCategoriaActiva(nuevaCategoria);
+  }, [categoriaActiva, cargandoCategoria]);
+
+  const toggleMostrarTodos = () => {
+    if (cargandoCategoria) return;
+    setMostrarTodos(!mostrarTodos);
   };
 
-  if (loading) {
-    return (
-      <section className="py-16 md:py-24 bg-gradient-to-br from-gray-900 to-purple-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="animate-pulse">
-            <div className="h-12 bg-white/10 rounded w-96 mx-auto mb-4"></div>
-            <div className="h-6 bg-white/5 rounded w-2/3 mx-auto mb-12"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-80 bg-white/10 rounded-xl"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // Determinar qué proyectos mostrar
+  const proyectosMostrados = mostrarTodos 
+    ? proyectos 
+    : proyectos.slice(0, 6);
+
+  // Efecto hover para las cards
+  const handleCardHover = useCallback((card, isEnter) => {
+    if (!card || cargandoCategoria) return;
+    
+    gsap.to(card, {
+      scale: isEnter ? 1.05 : 1,
+      y: isEnter ? -10 : 0,
+      boxShadow: isEnter 
+        ? '0 20px 40px rgba(0,0,0,0.3)' 
+        : '0 4px 6px rgba(0,0,0,0.1)',
+      duration: 0.3,
+      ease: 'power2.out',
+      overwrite: true
+    });
+    
+    const img = card.querySelector('.project-image');
+    if (img) {
+      gsap.to(img, {
+        scale: isEnter ? 1.1 : 1,
+        duration: 0.5,
+        ease: 'power2.out'
+      });
+    }
+  }, [cargandoCategoria]);
 
   return (
     <section ref={gridRef} className="py-16 md:py-24 bg-gradient-to-br from-gray-900 to-purple-900 overflow-hidden">
@@ -190,11 +228,12 @@ const GridProyectos = () => {
           <div ref={filtrosRef} className="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 md:mb-12">
             <button
               onClick={() => cambiarCategoria('')}
+              disabled={cargandoCategoria}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 categoriaActiva === ''
-                  ? 'bg-yellow-400 text-gray-900'
+                  ? 'bg-yellow-400 text-gray-900 scale-105 shadow-lg shadow-yellow-400/30'
                   : 'bg-white/10 text-white hover:bg-white/20'
-              }`}
+              } ${cargandoCategoria ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Todos
             </button>
@@ -202,11 +241,12 @@ const GridProyectos = () => {
               <button
                 key={cat.id}
                 onClick={() => cambiarCategoria(cat.slug)}
+                disabled={cargandoCategoria}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   categoriaActiva === cat.slug
-                    ? 'bg-yellow-400 text-gray-900'
+                    ? 'bg-yellow-400 text-gray-900 scale-105 shadow-lg shadow-yellow-400/30'
                     : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
+                } ${cargandoCategoria ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {cat.nombre} ({cat.contador})
               </button>
@@ -214,14 +254,20 @@ const GridProyectos = () => {
           </div>
         )}
 
-        {/* Grid de proyectos 3x3 */}
-        {proyectos.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {proyectos.slice(0, 9).map((proyecto, index) => (
+        {/* Grid de proyectos */}
+        <div 
+          ref={gridContainerRef}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 min-h-[400px]"
+        >
+          {proyectosMostrados.length > 0 ? (
+            proyectosMostrados.map((proyecto, index) => (
               <div
                 key={proyecto.id}
                 ref={el => cardsRef.current[index] = el}
-                className="group relative bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20 hover:border-yellow-400/50 transition-all"
+                className="group relative bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20"
+                style={{ opacity: 0 }} // ← Empiezan invisibles
+                onMouseEnter={(e) => handleCardHover(e.currentTarget, true)}
+                onMouseLeave={(e) => handleCardHover(e.currentTarget, false)}
               >
                 {/* Imagen del proyecto */}
                 <div className="relative h-48 md:h-56 overflow-hidden">
@@ -230,7 +276,7 @@ const GridProyectos = () => {
                       src={proyecto.imagen_destacada}
                       alt={proyecto.titulo}
                       fill
-                      className="project-image object-cover transition-transform"
+                      className="project-image object-cover"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
@@ -238,7 +284,6 @@ const GridProyectos = () => {
                     </div>
                   )}
                   
-                  {/* Overlay con categorías */}
                   <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                     {proyecto.categorias?.map((cat) => (
                       <span
@@ -251,7 +296,6 @@ const GridProyectos = () => {
                   </div>
                 </div>
 
-                {/* Contenido de la card */}
                 <div className="p-4 md:p-6">
                   <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
                     {proyecto.titulo}
@@ -261,7 +305,6 @@ const GridProyectos = () => {
                     {proyecto.descripcion_corta || 'Descripción breve del proyecto...'}
                   </p>
 
-                  {/* Botones de acción */}
                   <div className="flex gap-2">
                     {proyecto.url_sitio && (
                       <a
@@ -285,21 +328,24 @@ const GridProyectos = () => {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-gray-400 py-12">
-            No hay proyectos disponibles en esta categoría
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="col-span-3 text-center text-gray-400 py-12">
+              No hay proyectos disponibles en esta categoría
+            </div>
+          )}
+        </div>
 
-        {/* Botones inferiores (Ver más proyectos y Cotizar) */}
+        {/* Botón "Ver más" */}
+       
+
+        {/* Botones inferiores */}
         <div ref={botonesRef} className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
           <Link
             href="/proyectos"
             className="group bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
           >
-            Ver más proyectos
+            Ver todos los proyectos
             <FontAwesomeIcon icon={faArrowRight} className="group-hover:translate-x-2 transition-transform" />
           </Link>
           
@@ -311,11 +357,12 @@ const GridProyectos = () => {
           </Link>
         </div>
 
-        {/* Contador de proyectos (opcional) */}
+        {/* Contador */}
         {totalProyectos > 0 && (
           <div className="text-center mt-8">
             <span className="text-sm text-gray-400">
-              Mostrando {Math.min(proyectos.length, 9)} de {totalProyectos} proyectos
+              Mostrando {proyectosMostrados.length} de {totalProyectos} proyectos
+              {categoriaActiva && ` en esta categoría`}
             </span>
           </div>
         )}
