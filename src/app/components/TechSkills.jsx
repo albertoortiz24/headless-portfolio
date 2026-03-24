@@ -1,50 +1,52 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import ProgressBar from './ProgressBar';
-import Link from 'next/link';  // ← ¡IMPORTANTE! AGREGAR ESTA LÍNEA
 import ExperienceModal from './ExperienceModal';
+import { getSkills } from '@/lib/wordpress';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const TechSkills = () => {
   const [activeTab, setActiveTab] = useState('stack');
   const [modalOpen, setModalOpen] = useState(false);
+  const [stackSkills, setStackSkills] = useState([]);
+  const [learningSkills, setLearningSkills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   const sectionRef = useRef(null);
   const titleRef = useRef(null);
   const tabsRef = useRef(null);
   const progressRef = useRef(null);
   const buttonsRef = useRef(null);
 
-  // Stack actual (mis tecnologías dominadas)
-  const stackSkills = [
-    { name: "Tailwind CSS", percentage: 95, color: "from-cyan-400 to-blue-500" },
-    { name: "GSAP", percentage: 90, color: "from-green-400 to-emerald-500" },
-    { name: "Next.js", percentage: 88, color: "from-gray-600 to-gray-800" },
-    { name: "WordPress", percentage: 85, color: "from-blue-500 to-indigo-600" },
-    { name: "MySQL", percentage: 80, color: "from-orange-500 to-red-500" },
-    { name: "React.js", percentage: 85, color: "from-cyan-400 to-blue-500" },
-    { name: "JavaScript", percentage: 88, color: "from-yellow-400 to-orange-500" },
-    { name: "HTML/CSS", percentage: 92, color: "from-orange-400 to-red-500" },
-    { name: "Figma", percentage: 82, color: "from-purple-400 to-pink-500" },
-    { name: "PHP", percentage: 75, color: "from-indigo-500 to-purple-600" }
-  ];
-
-  // En proceso (tecnologías que estoy aprendiendo)
-  const learningSkills = [
-    { name: "Node.js", percentage: 65, color: "from-green-500 to-emerald-600" },
-    { name: "Python", percentage: 60, color: "from-blue-400 to-indigo-500" },
-    { name: "Express.js", percentage: 55, color: "from-gray-500 to-gray-700" },
-    { name: "Astro", percentage: 45, color: "from-purple-400 to-pink-500" }
-  ];
+  // Cargar skills desde WordPress
+  useEffect(() => {
+    const fetchSkills = async () => {
+      setLoading(true);
+      try {
+        const data = await getSkills();
+        setStackSkills(data.stack || []);
+        setLearningSkills(data.learning || []);
+      } catch (error) {
+        console.error('Error loading skills:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSkills();
+  }, []);
 
   const currentSkills = activeTab === 'stack' ? stackSkills : learningSkills;
 
   useEffect(() => {
+    if (loading) return;
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -74,7 +76,25 @@ const TechSkills = () => {
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [loading]);
+
+  if (loading) {
+    return (
+      <section className="py-16 md:py-24 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="animate-pulse text-center">
+            <div className="h-12 bg-white/10 rounded w-96 mx-auto mb-4"></div>
+            <div className="h-6 bg-white/5 rounded w-2/3 mx-auto mb-12"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-20 bg-white/10 rounded-xl"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section ref={sectionRef} className="py-16 md:py-24 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 overflow-hidden">
@@ -101,7 +121,7 @@ const TechSkills = () => {
                 : 'bg-white/10 text-white hover:bg-white/20'
             }`}
           >
-            Mi Stack
+            Mi Stack <span className="text-sm opacity-70">({stackSkills.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('learning')}
@@ -111,22 +131,30 @@ const TechSkills = () => {
                 : 'bg-white/10 text-white hover:bg-white/20'
             }`}
           >
-            En Proceso
+            En Proceso <span className="text-sm opacity-70">({learningSkills.length})</span>
           </button>
         </div>
 
-        {/* Progress Bars */}
-        <div ref={progressRef} className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {currentSkills.map((skill, index) => (
+            {/* Progress Bars */}
+        <div ref={progressRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {currentSkills.length > 0 ? (
+            currentSkills.map((skill) => (
             <ProgressBar
-              key={skill.name}
-              skill={skill.name}
-              percentage={skill.percentage}
-              color={skill.color}
+                key={skill.id}
+                skill={skill.nombre}
+                percentage={skill.porcentaje}
+                color={skill.color}
+                logo={skill.logo}  // ← PASAMOS EL LOGO
             />
-          ))}
+            ))
+        ) : (
+            <div className="col-span-2 text-center text-gray-400 py-12">
+            No hay habilidades registradas en esta categoría.
+            <br />
+            <span className="text-sm">Agrégalas desde el panel de WordPress</span>
+            </div>
+        )}
         </div>
-
         {/* Botones de acción */}
         <div ref={buttonsRef} className="flex flex-col sm:flex-row gap-4 justify-center mt-16">
           <button
@@ -138,7 +166,7 @@ const TechSkills = () => {
           </button>
           
           <Link
-            href="/"
+            href="/cotizar"
             className="group bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 border-2 border-white/20 hover:border-yellow-400/50 flex items-center justify-center gap-2"
           >
             Cotizar proyecto

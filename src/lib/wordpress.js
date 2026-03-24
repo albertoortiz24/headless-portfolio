@@ -196,3 +196,35 @@ export async function getProyectoCompletoBySlug(slug) {
   }
 }
 
+
+
+
+// src/lib/wordpress.js - Agregar al final del archivo
+
+/**
+ * Obtener todas las skills tecnológicas desde WordPress
+ */
+export async function getSkills() {
+  try {
+    const res = await fetch(`${WORDPRESS_API_URL}/wp-json/skills/v1/all`, {
+      next: { 
+        revalidate: 3600,
+        tags: ['skills'] 
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error('Error al obtener skills');
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching skills:', error);
+    return { 
+      stack: [], 
+      learning: [],
+      total: 0 
+    };
+  }
+}
