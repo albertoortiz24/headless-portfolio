@@ -1,30 +1,5 @@
 @import "tailwindcss";
 
-@layer utilities {
-  .safe-from-cyan-400 { --tw-gradient-from: #22d3ee; }
-  .safe-to-blue-500 { --tw-gradient-to: #3b82f6; }
-  .safe-from-green-400 { --tw-gradient-from: #4ade80; }
-  .safe-to-emerald-500 { --tw-gradient-to: #10b981; }
-  .safe-from-gray-600 { --tw-gradient-from: #4b5563; }
-  .safe-to-gray-800 { --tw-gradient-to: #1f2937; }
-  .safe-from-blue-500 { --tw-gradient-from: #3b82f6; }
-  .safe-to-indigo-600 { --tw-gradient-to: #4f46e5; }
-  .safe-from-orange-500 { --tw-gradient-from: #f97316; }
-  .safe-to-red-500 { --tw-gradient-to: #ef4444; }
-  .safe-from-yellow-400 { --tw-gradient-from: #facc15; }
-  .safe-to-orange-500 { --tw-gradient-to: #f97316; }
-  .safe-from-purple-400 { --tw-gradient-from: #c084fc; }
-  .safe-to-pink-500 { --tw-gradient-to: #ec489a; }
-  .safe-from-indigo-500 { --tw-gradient-from: #6366f1; }
-  .safe-to-purple-600 { --tw-gradient-to: #9333ea; }
-  .safe-from-green-500 { --tw-gradient-from: #22c55e; }
-  .safe-to-emerald-600 { --tw-gradient-to: #059669; }
-  .safe-from-blue-400 { --tw-gradient-from: #60a5fa; }
-  .safe-to-indigo-500 { --tw-gradient-to: #6366f1; }
-  .safe-from-gray-500 { --tw-gradient-from: #6b7280; }
-  .safe-to-gray-700 { --tw-gradient-to: #374151; }
-}
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
