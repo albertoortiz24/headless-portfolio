@@ -7,48 +7,44 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight, faChevronDown, faCalendar, faTag } from '@fortawesome/free-solid-svg-icons';
+import { getNoticiasDestacadas } from '@/lib/wordpress';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const BlogSection = () => {
+  const [posts, setPosts] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [loading, setLoading] = useState(true);
   const sectionRef = useRef(null);
   const titleRef = useRef(null);
   const accordionRef = useRef(null);
   const imageRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Datos de ejemplo
-  const posts = [
-    {
-      id: 1,
-      titulo: "Cómo optimizar Core Web Vitals en WordPress",
-      descripcion: "Aprende las mejores prácticas para mejorar los puntajes de Core Web Vitals en WordPress. Descubre técnicas de optimización de imágenes, caché, y renderizado crítico que pueden aumentar tu puntuación en un 40%.",
-      categoria: "Optimización",
-      fecha: "15 Marzo 2024",
-      imagen: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-      id: 2,
-      titulo: "Headless WordPress: Ventajas y Casos de Uso",
-      descripcion: "Explora por qué cada vez más empresas están adoptando arquitecturas headless con WordPress. Ventajas en rendimiento, seguridad, y flexibilidad para desarrolladores frontend.",
-      categoria: "Headless CMS",
-      fecha: "10 Marzo 2024",
-      imagen: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-      id: 3,
-      titulo: "Next.js 15: Novedades y Mejoras de Rendimiento",
-      descripcion: "Un análisis detallado de las nuevas características de Next.js 15, incluyendo mejoras en el compilador, optimizaciones de imágenes y nuevas APIs para desarrollo más eficiente.",
-      categoria: "Next.js",
-      fecha: "5 Marzo 2024",
-      imagen: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-    }
-  ];
+  // Cargar noticias desde WordPress
+  useEffect(() => {
+    const fetchNoticias = async () => {
+      setLoading(true);
+      try {
+        const data = await getNoticiasDestacadas();
+        setPosts(data);
+        if (data.length > 0) {
+          setActiveIndex(0);
+        }
+      } catch (error) {
+        console.error('Error loading noticias:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNoticias();
+  }, []);
 
   // Animación inicial
   useEffect(() => {
+    if (loading || posts.length === 0) return;
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -78,7 +74,7 @@ const BlogSection = () => {
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [loading, posts]);
 
   // Animación de cambio de imagen
   const cambiarImagen = (index) => {
@@ -153,6 +149,8 @@ const BlogSection = () => {
 
   // Abrir el primer acordeón por defecto
   useEffect(() => {
+    if (posts.length === 0) return;
+    
     const timer = setTimeout(() => {
       const firstItem = document.querySelector('.accordion-item');
       if (firstItem) {
@@ -167,7 +165,31 @@ const BlogSection = () => {
     }, 500);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [posts]);
+
+  if (loading) {
+    return (
+      <section className="py-16 md:py-24 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-12 bg-white/10 rounded w-96 mx-auto mb-8"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-24 bg-white/10 rounded-xl"></div>
+                ))}
+              </div>
+              <div className="h-[500px] bg-white/10 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (posts.length === 0) {
+    return null;
+  }
 
   return (
     <section ref={sectionRef} className="py-16 md:py-24 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 overflow-hidden">
@@ -176,7 +198,7 @@ const BlogSection = () => {
         {/* Contenedor de dos columnas */}
         <div className="grid grid-cols-1 lg:grid-cols-2">
           
-          {/* COLUMNA IZQUIERDA - Acordeones con padding */}
+          {/* COLUMNA IZQUIERDA - Acordeones */}
           <div ref={accordionRef} className="p-6 md:p-8 lg:p-12">
             <h2 ref={titleRef} className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-8 md:mb-12">
               Nuestras Noticias
@@ -215,9 +237,8 @@ const BlogSection = () => {
                       <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
                         {post.descripcion}
                       </p>
-                      {/* Botón Ver más */}
                       <Link
-                        href={`/blog/${post.id}`}
+                        href={`/blog/${post.slug}`}
                         className="inline-flex items-center gap-2 text-yellow-400 hover:text-yellow-300 font-medium transition-all group/btn"
                       >
                         Ver más
@@ -233,7 +254,7 @@ const BlogSection = () => {
             </div>
           </div>
           
-          {/* COLUMNA DERECHA - Imagen totalmente pegada al borde derecho */}
+          {/* COLUMNA DERECHA - Imagen pegada al borde */}
           <div className="relative flex justify-end -mr-[calc((100vw-100%)/2)] lg:-mr-[calc((100vw-1280px)/2)]">
             <div 
               ref={imageRef}
@@ -246,18 +267,23 @@ const BlogSection = () => {
                     activeIndex === index ? 'opacity-100 z-10' : 'opacity-0 z-0'
                   }`}
                 >
-                  <Image
-                    src={post.imagen}
-                    alt={post.titulo}
-                    fill
-                    className="object-cover"
-                    priority={index === 0}
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                  />
-                  {/* Overlay gradiente para legibilidad */}
+                  {post.imagen ? (
+                    <Image
+                      src={post.imagen}
+                      alt={post.titulo}
+                      fill
+                      className="object-cover"
+                      priority={index === 0}
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold">{post.titulo.charAt(0)}</span>
+                    </div>
+                  )}
+                  
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                   
-                  {/* Información de la imagen */}
                   <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
                     <div className="flex flex-wrap gap-3 mb-3">
                       <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-400/20 backdrop-blur-sm text-yellow-300 text-sm rounded-full">

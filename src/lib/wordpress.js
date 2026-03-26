@@ -243,3 +243,55 @@ export async function getExperiencia() {
     return {};
   }
 }
+
+
+
+
+
+
+
+
+
+/**
+ * Obtener noticias destacadas desde WordPress
+ */
+export async function getNoticiasDestacadas() {
+  try {
+    const res = await fetch(`${WORDPRESS_API_URL}/wp-json/noticias/v1/destacadas`, {
+      next: { 
+        revalidate: 3600,
+        tags: ['noticias-destacadas'] 
+      }
+    });
+
+    if (!res.ok) throw new Error('Error al obtener noticias destacadas');
+    
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching noticias:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtener todas las noticias
+ */
+export async function getAllNoticias() {
+  try {
+    const res = await fetch(`${WORDPRESS_API_URL}/wp-json/noticias/v1/all`, {
+      next: { 
+        revalidate: 3600,
+        tags: ['noticias-all'] 
+      }
+    });
+
+    if (!res.ok) throw new Error('Error al obtener noticias');
+    
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching noticias:', error);
+    return [];
+  }
+}
