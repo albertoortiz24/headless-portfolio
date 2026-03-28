@@ -1,5 +1,6 @@
 // lib/wordpress.js - Agregar al final
-
+// src/lib/wordpress/testimonios.js
+import { WORDPRESS_API_URL } from './client';
 /**
  * Obtener testimonios destacados (carrusel principal)
  */
