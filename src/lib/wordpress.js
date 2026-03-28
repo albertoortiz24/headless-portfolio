@@ -338,3 +338,157 @@ export async function getCategoriasNoticias() {
     return [];
   }
 }
+
+
+
+
+
+
+
+
+
+/**
+ * Obtener una noticia por su slug
+ */
+export async function getNoticiaBySlug(slug) {
+  try {
+    const res = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/noticias?slug=${slug}&_embed`, {
+      next: { revalidate: 3600, tags: [`noticia-${slug}`] }
+    });
+    
+    if (!res.ok) throw new Error('Error al obtener noticia');
+    
+    const posts = await res.json();
+    if (posts.length === 0) return null;
+    
+    const post = posts[0];
+    
+    // Obtener la imagen destacada correctamente
+    let imagenUrl = '';
+    if (post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0]) {
+      imagenUrl = post._embedded['wp:featuredmedia'][0].source_url;
+    }
+    
+    // Obtener categoría
+    let categoria = 'General';
+    if (post.categoria_noticia && post.categoria_noticia.length > 0) {
+      try {
+        const catRes = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/categorias-noticia/${post.categoria_noticia[0]}`);
+        const catData = await catRes.json();
+        categoria = catData.name;
+      } catch (err) {
+        console.error('Error fetching category:', err);
+      }
+    }
+    
+    return {
+      id: post.id,
+      titulo: post.title?.rendered || '',
+      descripcion: post.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '',
+      contenido: post.content?.rendered || '',
+      imagen: imagenUrl,
+      categoria: categoria,
+      fecha: new Date(post.date).toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      }),
+      slug: post.slug,
+    };
+  } catch (error) {
+    console.error('Error fetching noticia by slug:', error);
+    return null;
+  }
+}
+/**
+ * Obtener noticias relacionadas por categoría
+ */
+export async function getNoticiasRelacionadas(slug, limit = 3) {
+  try {
+    // Primero obtener la noticia actual para saber su categoría
+    const currentRes = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/noticias?slug=${slug}`);
+    const currentPosts = await currentRes.json();
+    if (currentPosts.length === 0) return [];
+    
+    const currentPost = currentPosts[0];
+    const categoriaId = currentPost.categoria_noticia?.[0];
+    
+    if (!categoriaId) return [];
+    
+    // Obtener noticias de la misma categoría
+    const res = await fetch(
+      `${WORDPRESS_API_URL}/wp-json/wp/v2/noticias?categoria_noticia=${categoriaId}&per_page=${limit}&exclude=${currentPost.id}&_embed`,
+      { next: { revalidate: 3600, tags: ['noticias-relacionadas'] } }
+    );
+    
+    if (!res.ok) throw new Error('Error al obtener noticias relacionadas');
+    const posts = await res.json();
+    
+    return posts.map(post => {
+      // Obtener la imagen destacada correctamente
+      let imagenUrl = '';
+      if (post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0]) {
+        imagenUrl = post._embedded['wp:featuredmedia'][0].source_url;
+      }
+      
+      return {
+        id: post.id,
+        titulo: post.title?.rendered || '',
+        descripcion: post.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '',
+        imagen: imagenUrl,
+        categoria: 'Categoría',
+        fecha: new Date(post.date).toLocaleDateString('es-ES', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        }),
+        slug: post.slug,
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching noticias relacionadas:', error);
+    return [];
+  }
+}
+
+
+
+/**
+ * Obtener noticias recientes
+ */
+export async function getNoticiasRecientes(limit = 5) {
+  try {
+    const res = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/noticias?per_page=${limit}&_embed`, {
+      next: { revalidate: 3600, tags: ['noticias-recientes'] }
+    });
+    if (!res.ok) throw new Error('Error al obtener noticias recientes');
+    const posts = await res.json();
+    
+    return posts.map(post => {
+      let imagenUrl = '';
+      if (post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0]) {
+        imagenUrl = post._embedded['wp:featuredmedia'][0].source_url;
+      }
+      return {
+        id: post.id,
+        titulo: post.title?.rendered || '',
+        descripcion: post.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '',
+        imagen: imagenUrl,
+        fecha: new Date(post.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+        slug: post.slug,
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching noticias recientes:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtener noticias más vistas (simulado - puedes implementar con analytics)
+ */
+export async function getNoticiasMasVistas(limit = 5) {
+  // Por ahora devuelve las mismas que recientes
+  // En producción, esto vendría de un plugin de analytics
+  return getNoticiasRecientes(limit);
+}
