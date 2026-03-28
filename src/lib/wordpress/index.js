@@ -29,3 +29,10 @@ export {
   getNoticiasMasVistas,
   getCategoriasNoticias
 } from './noticias';
+
+// Testimonios
+export {
+    getTestimoniosDestacados,
+    getAllTestimonios,
+    getGoogleReviewsData
+} from './testimonios';
