@@ -7,7 +7,7 @@ export async function getMarcas() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/marcas/v1/all`, {
       next: { 
-        revalidate: 3600,
+        revalidate: 60,
         tags: ['marcas'] 
       }
     });
@@ -50,7 +50,7 @@ export async function getProyectosDestacados(categoria = '') {
     
     const res = await fetch(url, {
       next: { 
-        revalidate: 3600,
+        revalidate: 60,
         tags: ['proyectos'] 
       }
     });
@@ -72,7 +72,7 @@ export async function getCategoriasProyectos() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/proyectos/v1/categorias`, {
       next: { 
-        revalidate: 3600,
+        revalidate: 60,
         tags: ['categorias-proyecto'] 
       }
     });
@@ -97,7 +97,7 @@ export async function getProyectoBySlug(slug) {
       `${WORDPRESS_API_URL}/wp-json/wp/v2/proyectos?slug=${slug}&_embed`,
       {
         next: { 
-          revalidate: 3600,
+          revalidate: 60,
           tags: [`proyecto-${slug}`] 
         }
       }
@@ -177,7 +177,7 @@ export async function getProyectoCompletoBySlug(slug) {
       `${WORDPRESS_API_URL}/wp-json/proyectos/v1/proyecto/${slug}`,
       {
         next: { 
-          revalidate: 3600,
+          revalidate: 60,
           tags: [`proyecto-completo-${slug}`] 
         }
       }
@@ -208,7 +208,7 @@ export async function getSkills() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/skills/v1/all`, {
       next: { 
-        revalidate: 3600,
+        revalidate: 60,
         tags: ['skills'] 
       }
     });
@@ -234,7 +234,7 @@ export async function getSkills() {
 export async function getExperiencia() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/experiencia/v1/all`, {
-      next: { revalidate: 3600, tags: ['experiencia'] }
+      next: { revalidate: 60, tags: ['experiencia'] }
     });
     if (!res.ok) throw new Error('Error al obtener experiencia');
     return await res.json();
@@ -259,7 +259,7 @@ export async function getNoticiasDestacadas() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/noticias/v1/destacadas`, {
       next: { 
-        revalidate: 3600,
+        revalidate: 60,
         tags: ['noticias-destacadas'] 
       }
     });
@@ -281,7 +281,7 @@ export async function getAllNoticias() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/noticias/v1/all`, {
       next: { 
-        revalidate: 3600,
+        revalidate: 60,
         tags: ['noticias-all'] 
       }
     });
@@ -307,7 +307,7 @@ export async function getAllNoticias() {
 export async function getAllNoticiasBlog() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/noticias/v1/all`, {
-      next: { revalidate: 3600, tags: ['noticias-all'] }
+      next: { revalidate: 60, tags: ['noticias-all'] }
     });
     if (!res.ok) throw new Error('Error al obtener noticias');
     return await res.json();
@@ -323,7 +323,7 @@ export async function getAllNoticiasBlog() {
 export async function getCategoriasNoticias() {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/categorias-noticia?per_page=100`, {
-      next: { revalidate: 3600, tags: ['categorias-noticia'] }
+      next: { revalidate: 60, tags: ['categorias-noticia'] }
     });
     if (!res.ok) throw new Error('Error al obtener categorías');
     const data = await res.json();
@@ -353,7 +353,7 @@ export async function getCategoriasNoticias() {
 export async function getNoticiaBySlug(slug) {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/noticias?slug=${slug}&_embed`, {
-      next: { revalidate: 3600, tags: [`noticia-${slug}`] }
+      next: { revalidate: 60, tags: [`noticia-${slug}`] }
     });
     
     if (!res.ok) throw new Error('Error al obtener noticia');
@@ -418,7 +418,7 @@ export async function getNoticiasRelacionadas(slug, limit = 3) {
     // Obtener noticias de la misma categoría
     const res = await fetch(
       `${WORDPRESS_API_URL}/wp-json/wp/v2/noticias?categoria_noticia=${categoriaId}&per_page=${limit}&exclude=${currentPost.id}&_embed`,
-      { next: { revalidate: 3600, tags: ['noticias-relacionadas'] } }
+      { next: { revalidate: 60, tags: ['noticias-relacionadas'] } }
     );
     
     if (!res.ok) throw new Error('Error al obtener noticias relacionadas');
@@ -459,7 +459,7 @@ export async function getNoticiasRelacionadas(slug, limit = 3) {
 export async function getNoticiasRecientes(limit = 5) {
   try {
     const res = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/noticias?per_page=${limit}&_embed`, {
-      next: { revalidate: 3600, tags: ['noticias-recientes'] }
+      next: { revalidate: 60, tags: ['noticias-recientes'] }
     });
     if (!res.ok) throw new Error('Error al obtener noticias recientes');
     const posts = await res.json();

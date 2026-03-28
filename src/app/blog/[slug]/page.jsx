@@ -323,16 +323,6 @@ const SingleNoticiaPage = ({ params }) => {
                 <p className="text-gray-400 text-sm">Espacio publicitario</p>
                 <p className="text-gray-500 text-xs mt-2">300x250</p>
               </div>
-              <div className="flex gap-2 mt-4">
-                <button className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
-                  <FontAwesomeIcon icon={faShare} className="w-3 h-3" />
-                  Compartir
-                </button>
-                <button className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
-                  <FontAwesomeIcon icon={faBookmark} className="w-3 h-3" />
-                  Guardar
-                </button>
-              </div>
             </div>
           </div>
 
