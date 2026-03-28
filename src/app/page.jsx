@@ -11,8 +11,8 @@ export default function Page() {
       <BannerInicio />
        <Marcas />
         <GridProyectos />
-          <TechSkills />      
-      <BlogSection />  // ← NUEVO
+        <TechSkills />      
+        <BlogSection /> 
       <CarruselTecnologias />
     </div>
   )

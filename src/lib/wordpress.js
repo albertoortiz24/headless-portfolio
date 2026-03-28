@@ -295,3 +295,46 @@ export async function getAllNoticias() {
     return [];
   }
 }
+
+
+
+
+
+
+/**
+ * Obtener todas las noticias del blog
+ */
+export async function getAllNoticiasBlog() {
+  try {
+    const res = await fetch(`${WORDPRESS_API_URL}/wp-json/noticias/v1/all`, {
+      next: { revalidate: 3600, tags: ['noticias-all'] }
+    });
+    if (!res.ok) throw new Error('Error al obtener noticias');
+    return await res.json();
+  } catch (error) {
+    console.error('Error fetching noticias:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtener categorías de noticias
+ */
+export async function getCategoriasNoticias() {
+  try {
+    const res = await fetch(`${WORDPRESS_API_URL}/wp-json/wp/v2/categorias-noticia?per_page=100`, {
+      next: { revalidate: 3600, tags: ['categorias-noticia'] }
+    });
+    if (!res.ok) throw new Error('Error al obtener categorías');
+    const data = await res.json();
+    return data.map(cat => ({
+      id: cat.id,
+      nombre: cat.name,
+      slug: cat.slug,
+      contador: cat.count
+    }));
+  } catch (error) {
+    console.error('Error fetching categorias:', error);
+    return [];
+  }
+}
