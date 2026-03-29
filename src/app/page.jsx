@@ -7,6 +7,7 @@ import TechSkills from "./components/TechSkills";
 import BlogSection from "./components/BlogSection"; 
 import Testimonios from "./components/Testimonios";
 import ConstructionModal from "./components/ConstructionModal"; // ← NUEVO
+import Cotizador from "./components/Cotizador";
 export default function Page() {
   return (
     <div>
@@ -17,6 +18,7 @@ export default function Page() {
         <TechSkills />      
         <BlogSection /> 
         <Testimonios />
+        <Cotizador />  
       <CarruselTecnologias />
     </div>
   )

@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+
+
+/* Agrega esto a tu CSS global para mejorar la experiencia */
+input[type="range"]::-webkit-slider-thumb {
+  @apply bg-yellow-400 cursor-pointer;
+}
+
+/* Para móviles: asegurar que el formulario sea responsive */
+@media (max-width: 768px) {
+  .cotizador-form {
+    @apply px-4;
+  }
+}
