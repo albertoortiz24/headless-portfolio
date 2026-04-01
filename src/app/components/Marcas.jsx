@@ -276,7 +276,8 @@ const Marcas = () => {
               ref={contadorRef}
               className="text-2xl font-bold text-yellow-400 tabular-nums"
             >
-              {data.contador}
+              {/*data.contador*/}
+              
             </span>
             <span className="text-gray-300">marcas satisfechas</span>
           </div>

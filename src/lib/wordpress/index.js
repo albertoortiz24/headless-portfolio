@@ -36,3 +36,6 @@ export {
     getAllTestimonios,
     getGoogleReviewsData
 } from './testimonios';
+
+
+export { getServicios } from './servicios';
